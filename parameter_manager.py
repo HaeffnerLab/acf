@@ -24,8 +24,9 @@ class ParameterManager:
     
     def get_param(self, name):
         """Get a parameter.
-        
-        This function must be called from the build method.
+
+        This returns the absolute value of the parameter. For example, if the parameter
+        is 200 MHz this will return 200,000,000.
         
         Args:
             name (str): The name of the parameter. Do not include the __param__ prefix.
@@ -37,13 +38,25 @@ class ParameterManager:
         	raise RuntimeError(f"parameter {name} does not exist.")
         
         return param_dataset
+
+    def get_param_units(self, name):
+        """Get the units for a parameter.
+
+        Args:
+            name (str): The name of the parameter. Do not include the __param__ prefix.
+        
+        Returns: The units of the parameter.
+        """
+        param_metadata = self.exp.get_dataset_metadata(self.dataset_prefix + name)
+        return param_metadata.get("unit")
     
-    def set_param(self, name, value):
+    def set_param(self, name, value, units=None):
         """Set a parameter.
         
         Args:
             name (str): The name of the parameter. Do not include the _param_ prefix.
             value (?): The value to which the parameter will be set.
+            units (str): The Artiq units for the parameter.
         """
-        self.exp.set_dataset(self.dataset_prefix + name, value, persist=True)
+        self.exp.set_dataset(self.dataset_prefix + name, value, unit=units, persist=True)
 
