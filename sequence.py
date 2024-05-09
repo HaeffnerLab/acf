@@ -57,15 +57,25 @@ class Sequence:
         """
         self.exp = exp
         self.seq = seq
-        self.add_arguments()
+        self.set_param_and_arg_defaults()
         hardware.add_device_attributes(self)
 
-    def add_arguments(self):
-        """Add arguments from the sequence to the GUI.
+    def set_param_and_arg_defaults(self):
+        """Set parameters and arguments to their default values.
 
-        Args:
-            exp (EnvExperiment): The experiment class to which the arguments are added.
+        Parameters are set to their values from storage, arguments are set to the
+        default value in the NumberValue or descriptor given in the "value" attribute
+        of the dict.
         """
+        for param in self.parameters:
+            setattr(self, param.replace("/", "_"), self.exp.parameter_manager.get_param(param))
+
+        for arg_dict in self.arguments:
+            setattr(self, arg_dict["name"], arg_dict["value"].default())
+
+    def add_arguments_to_gui(self):
+        """Add parameters and arguments from the sequence to the GUI."""
+
         # The displayed name is prefixed with the group name to avoid conflicting with
         # other parameters with the same name. The name set as an attribute inside the
         # sequence is not prefixed with the group name.
