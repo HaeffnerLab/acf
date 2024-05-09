@@ -57,7 +57,7 @@ class Sequence:
             group_param_name = f"{self.group_name}_{param}"
             self.exp.setattr_argument(
                 group_param_name,
-                NumberValue(default=self.exp.parameter_manager.get_param(param)),
+                NumberValue(default=self.exp.parameter_manager.get_param(param), precision=5),
                 group=self.group_name
             )
             setattr(self, param, getattr(self.exp, group_param_name))
