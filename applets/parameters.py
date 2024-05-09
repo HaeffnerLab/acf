@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QMainWindow, QTreeView, QAbstractItemView
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 import PyQt5.Qt as Qt
 from artiq.applets.simple import SimpleApplet
+from artiq.language import units
 
 #from acf.parameter_manager import ParameterManager
 
@@ -77,11 +78,24 @@ class ParameterWidget(QMainWindow):
 
         param_name = item.data()
         dataset_name = f"__param__{param_name}"
-        value = item.text()
-        if value.replace(".", "").isnumeric():
-            value = float(value)
+
+        value, unit_str = self.get_value_from_display_text(item.text())
         self.updating_datasets_from_item = True
-        self.req.set_dataset(dataset_name, value)
+        self.req.set_dataset(dataset_name, value, unit=unit_str)
+
+    def value_with_unit(self, value, unit_str):
+        """Given an absolute value, return it in units described by unit_str.
+
+        Ex. if `value` is 200,000,000 and unit_str is "MHz", this would return 200.
+
+        Args:
+            value (float): The value to convert.
+            unit_str (str): The artiq unit string.
+
+        Returns: The converted value with given units.
+        """
+        scale = getattr(units, unit_str)
+        return value / scale
 
     def data_changed(self, value, metadata, persist, mod_buffer):
 
@@ -94,69 +108,31 @@ class ParameterWidget(QMainWindow):
             return
 
         mod = mod_buffer[0]
+        print(mod)
 
         if mod["action"] == "init":
             # Initialize the table
+            print(value)
             for dataset_name, dataset_value in value.items():
                 # TODO Replace __param__ with dataset_prefix from ParameterManger
                 # See lower TODO
                 param_name = dataset_name.removeprefix("__param__")
-                self.add_param_to_model(param_name, dataset_value)
+                param_unit = mod["struct"][dataset_name][2].get("unit", None)
+                self.add_param_to_model(param_name, dataset_value, unit_str=param_unit)
 
         elif mod["action"] == "setitem":
             param_name = mod["key"].removeprefix("__param__")
             param_value = mod["value"][1]
+            param_unit = mod["value"][2].get("unit", None)
 
             # Find item who's data matches the parameter name
             item = self.find_matching_item(param_name)
 
             if item is None:
-                self.add_param_to_model(param_name, param_value)
+                self.add_param_to_model(param_name, param_value, unit_str=param_unit)
             else:
                 self.updating_item_from_datasets = True
-                item.setText(str(param_value))
-
-
-            """for row in range(self.model.rowCount()):
-                item = self.model.item(row, 1)
-                print("AAA")
-                print(item)
-                if item is not None:
-                    print(item.text())
-                    print(item.data())
-                print(param_name)
-                print()
-                if item is not None and item.data() == param_name:
-                    found_item = True
-                    self.updating_item_from_datasets = True
-                    item.setText(str(param_value))
-                    break
-
-            if not found_item:
-                print("DIDNT FIND")
-                self.add_param_to_model(param_name, param_value)"""
-
-            """
-            # Get the item corresponding to the name of the parameter
-            model_name_items = self.model.findItems(param_name, flags=Qt.Qt.MatchExactly, column=0)
-
-            if len(model_name_items) == 0:
-
-                # Create a new row for the new item
-                self.add_param_to_model(param_name, param_value)
-
-            elif len(model_name_items) == 1:
-
-                # Update the existing item
-                model_name_item = model_name_items[0]
-                row = model_name_item.row()
-                column = model_name_item.column()
-                model_value_item = self.model.item(row, column + 1)
-                self.updating_item_from_datasets = True
-                model_value_item.setText(str(param_value))
-
-            else:
-                raise RuntimeError(f"Found {len(model_name_items)} items in model with name {param_name}, should be 0 or 1.")"""
+                item.setText(self.make_value_display_text(param_value, param_unit))
 
         elif mod["action"] == "delitem":
             param_name = mod["key"].removeprefix("__param__")
@@ -169,19 +145,6 @@ class ParameterWidget(QMainWindow):
                 else:
                     item.parent().takeRow(item.row())
 
-            """for row in range(self.model.rowCount()):
-                item = self.model.item(row, 1)
-                if item.data() == param_name:
-                    self.model.takeRow(row)
-                    break"""
-
-            """
-            model_name_items = self.model.findItems(param_name, flags=Qt.Qt.MatchExactly, column=0)
-            if len(model_name_items) == 1:
-                self.model.takeRow(model_name_items[0].row())
-            if len(model_name_items) > 1:
-                raise RuntimeError("More than 1 row matches item to be deleted.")
-            """
     def find_matching_item(self, data):
         """Find the first item in the model tree who's item data matches `data`.
 
@@ -213,16 +176,51 @@ class ParameterWidget(QMainWindow):
             return None
 
         return recurse(self.model.invisibleRootItem())    
+    
+    def make_value_display_text(self, value, unit_str=None):
+        """Create the display text for a value and unit.
 
-    def add_param_to_model(self, name, value):
+        Args:
+            value (?): The value being displayed.
+            unit_str (str): The string units. Should be an artiq unit.
+
+        Returns: String representing the value and units.
+        """
+        if unit_str is not None:
+            return f"{self.value_with_unit(value, unit_str)} {unit_str}"
+        else:
+            return str(value)
+
+    def get_value_from_display_text(self, display_text):
+        """Get the full value represented by display text.
+
+        Args:
+            display_text (str): The text displaying a parameter.
+
+        Returns: (value, unit_str) The value and unit string represented by the text.
+        """
+        split = display_text.split()
+        value_in_units = split[0]
+        if value_in_units.replace(".", "").isnumeric():
+            value_in_units = float(value_in_units)
+
+        if len(split) == 1:
+            return value_in_units, None
+        else:
+            unit_str = split[1]
+            scale = getattr(units, unit_str)
+            return value_in_units * scale, unit_str
+
+    def add_param_to_model(self, name, value, unit_str=None):
         """Add a parameter to the model to be displayed.
 
         Args:
             name (str): The name of the parameter Should not include the parameter manager prefix.
             value (?): The value of the parameter.
+            unit_str (str): String representing the artiq units of the value.
         """
         levels = name.split("/")
-        value_item = QStandardItem(str(value))
+        value_item = QStandardItem(self.make_value_display_text(value, unit_str))
         value_item.setData(name)
         print()
         print(f"Adding param: '{name}'")
