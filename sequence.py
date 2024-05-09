@@ -55,12 +55,13 @@ class Sequence:
         # sequence is not prefixed with the group name.
         for param in self.parameters:
             group_param_name = f"{self.group_name}_{param}"
+            #print(self.exp.parameter_manager.get_param_units(param))
             self.exp.setattr_argument(
                 group_param_name,
                 NumberValue(default=self.exp.parameter_manager.get_param(param), precision=5),
                 group=self.group_name
             )
-            setattr(self, param, getattr(self.exp, group_param_name))
+            setattr(self, param.replace("/", "_"), getattr(self.exp, group_param_name))
 
     # Default methds for run and sequence??
 
