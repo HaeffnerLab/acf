@@ -70,6 +70,7 @@ class HardwareSetup:
         self.dds_devices = []
 
         self.exp.setattr_device("core")
+        self.exp.setattr_device("scheduler")
         for device_name in self.hardware:
 
             # Register device with Artiq

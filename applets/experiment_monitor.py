@@ -7,7 +7,7 @@ from artiq.applets.simple import TitleApplet, SimpleApplet
 
 class ExperimentMonitor(pg.PlotWidget):
 
-    def __init__(self, args):
+    def __init__(self, args, req):
         pg.PlotWidget.__init__(self)
         self.args = args
 
@@ -48,18 +48,18 @@ class ExperimentMonitor(pg.PlotWidget):
         
         self.waiting_for_size_update = False
 
-    def data_changed(self, data, mods, title=None):
-        if self.y_dataset_name not in data:
+    def data_changed(self, value, metadata, persist, mod_buffer):
+        if self.y_dataset_name not in value:
             raise RuntimeError(f"Y Dataset name '{self.y_dataset_name}' "
-                                "not in data.")
+                                "not in value.")
 
-        if self.has_x_dataset and self.x_dataset_name not in data:
+        if self.has_x_dataset and self.x_dataset_name not in value:
             raise RuntimeError(f"X Dataset name '{self.x_dataset_name}' "
-                                "not in data.")
+                                "not in value.")
 
-        y_data = data[self.y_dataset_name][1]
+        y_data = value[self.y_dataset_name]
         if self.has_x_dataset:
-            x_data = data[self.x_dataset_name][1]
+            x_data = value[self.x_dataset_name]
         else:
             x_data = np.arange(len(y_data))
         

@@ -15,12 +15,6 @@ class ParameterWidget(QMainWindow):
         self.setup()
 
         self.req = req
-        """print(dir(self.req.ipc.write_pyon(
-                        {"action": "get_dataset",
-                         "key": "a",
-                         "value": 5,
-                         "metadata": {},
-                         "persist": None})))"""
 
         # Set this to true before updating item text from dataset to avoid triggering
         # dataset update from item changed event
@@ -81,10 +75,6 @@ class ParameterWidget(QMainWindow):
             self.updating_item_from_datasets = False
             return
 
-        print("ITEM CHANGED")
-        print(item)
-        print(item.text())
-
         name_item = self.model.item(item.row(), item.column() - 1)
         dataset_name = f"__param__{name_item.text()}"
         value = item.text()
@@ -92,12 +82,6 @@ class ParameterWidget(QMainWindow):
             value = float(value)
         self.updating_datasets_from_item = True
         self.req.set_dataset(dataset_name, value)
-
-    #def retranslateUi(self):
-        #pass
-        #self.setColumnCount(2)
-        #self.setHeaderLabels(["Parameter", "Value"])
-        #self.addTopLevelItems([QTreeWidgetItem(["hi", "5"])])
 
     def data_changed(self, value, metadata, persist, mod_buffer):
 
@@ -108,12 +92,6 @@ class ParameterWidget(QMainWindow):
         if self.updating_datasets_from_item:
             self.updating_datasets_from_item = False
             return
-
-        print("value, metadata, persist, mod_buffer")
-        print(value)
-        print(metadata)
-        print(persist)
-        print(mod_buffer)
 
         mod = mod_buffer[0]
 
@@ -171,21 +149,10 @@ class ParameterWidget(QMainWindow):
         self.model.appendRow([name_item, value_item])
 
 
-
-"""class MyApplet(SimpleApplet):
-    
-    def __init__(self):
-        super().__init__(ParameterWidget)
-
-        self.main_widget.self.model.itemChanged.connect(self.do_thing)
-
-    def do_thing(self):
-        print("I'm the apple!")"""
-
 class GetParametersApplet(SimpleApplet):
     """A simple applet that adds __param__ to dataset prefixes so that it gets
     updates to all the datasets being used as system parameters. Note that this
-    prefix __param__ comes from """
+    prefix __param__ comes from ParameterManager in acf."""
 
     def args_init(self):
         super().args_init()
@@ -196,10 +163,7 @@ class GetParametersApplet(SimpleApplet):
         #self.dataset_prefixes.append(ParameterManager.dataset_prefix)
 
 def main():
-    #widget = QtWidgets.QTreeWidget()
-    #applet = SimpleApplet(QtWidgets.QTreeWidget)
     applet = GetParametersApplet(ParameterWidget)
-    #applet = MyApplet()
     applet.run()
 
 
