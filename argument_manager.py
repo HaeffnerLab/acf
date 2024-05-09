@@ -3,7 +3,7 @@ define common arguments for scripts in one place."""
 
 from artiq.language.environment import NumberValue
 
-from trapped_ions_control.parameter_manager import ParameterManager
+from acf.parameter_manager import ParameterManager
 
 class ArgumentManager:
 
