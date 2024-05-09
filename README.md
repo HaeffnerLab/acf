@@ -224,21 +224,3 @@ class MyExperiment(ACFExperiment):
 ```
 
 First import the sequences object that was created in the previous step, and call `self.setup(sequences)` using that object in `build()`. All defined sequences will now be available through the `self.seq` object. If you want to configure arguments to that sequence, then call `add_arguments_to_gui()` on the sequence. To call the sequence, call `run()` on the sequence. If you want to pass values into the sequence that change between calls (in this case setting arguments in the GUI is not enough) then call `self.seq.sequence_name.sequence(values)`. This use case is the reason that sequences are implemented with seperate `run()` and `sequence()` functions.
-
-
-
-
-
-
-
-Things to put in
-[x] Parameters, parameter displayer widget, naming with slashes
-[x] Adding parameter / other applets to GUI
-[x] Parameters v Arguments
-[x] Design principles
-[ ] Code summary - what are the different classes etc.
-[x] Installation instructions
-[x] How to create an experiment
-[x] How to create a sequence
-[x] Why need extra hardware def file
-    - Could add constraints into the file on output attenuation etc.?
